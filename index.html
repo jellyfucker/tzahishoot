@@ -86,6 +86,10 @@
         const lifeImg = new Image();
         lifeImg.src = 'image.png';  // The same player image, used to represent remaining lives
 
+        // Load bonus item image (cottage cheese)
+        const bonusImg = new Image();
+        bonusImg.src = '97065831232e1dc56224ca9ad0c9c481-removebg-preview.png';  // Bonus item image
+
         // Load the fabric logo
         const fabricLogo = new Image();
         fabricLogo.src = 'fs07ctg29wT95gbs4357.png';  // Fabric logo as the background
@@ -101,11 +105,16 @@
         const hitSound = new Audio('WhatsApp Audio 2024-10-14 at 20.56.36.wav'); // Sound when player is hit
 
         // Load projectile hit sound
-        const projectileHitSound = 'WhatsApp Audio 2024-10-14 at 21.20.16.wav'; // Sound when projectile hits enemy
+        const projectileHitSound = new Audio('WhatsApp Audio 2024-10-14 at 21.20.16.wav'); // Sound when projectile hits enemy
+
+        // Load bonus item catch sound
+        const bonusCatchSound = new Audio('WhatsApp Audio 2024-10-15 at 08.30.36.wav'); // Bonus item catch sound
 
         // Set the volume: 50% for background music
         bgMusic.volume = 0.5;
         hitSound.volume = 1.0; // Full volume for hit sound
+        projectileHitSound.volume = 1.0;
+        bonusCatchSound.volume = 1.0; // Full volume for bonus item sound
 
         let player = {
             x: canvas.width / 2 - 25,
@@ -117,6 +126,7 @@
 
         let bullets = [];
         let enemies = [];
+        let bonusItem = null; // Placeholder for the bonus item
         let score = 0; // Initialize score
         let lives = 3; // Initialize lives
         let speedMultiplier = 1; // Speed multiplier to increase the game speed
@@ -142,6 +152,17 @@
                 points: isLift ? 20 : 10, // Lift enemies are worth 20 points
                 isLift: isLift,  // Identify lift enemies
                 img: isLift ? liftImg : groundImg  // Choose the image
+            };
+        }
+
+        // Create the bonus item
+        function createBonusItem() {
+            return {
+                x: Math.random() * (canvas.width - 50),
+                y: Math.random() * -200,  // Start off-screen
+                width: 57.5,  // Enlarge by 15% (50 * 1.15)
+                height: 57.5,  // Enlarge by 15% (50 * 1.15)
+                speed: 3  // Bonus item falls with moderate speed
             };
         }
 
@@ -201,6 +222,35 @@
             });
         }
 
+        // Draw the bonus item
+        function drawBonusItem() {
+            if (bonusItem) {
+                bonusItem.y += bonusItem.speed;
+
+                // If the bonus item is off-screen, create a new one with 80% probability
+                if (bonusItem.y > canvas.height) {
+                    if (Math.random() < 0.8) {  // 80% chance to respawn a new bonus item
+                        bonusItem = createBonusItem();
+                    } else {
+                        bonusItem = null;  // 20% chance that no new bonus item is created
+                    }
+                }
+
+                // Draw the bonus item if it exists
+                if (bonusItem) {
+                    ctx.drawImage(bonusImg, bonusItem.x, bonusItem.y, bonusItem.width, bonusItem.height);
+
+                    // Check if player collects the bonus item
+                    if (isColliding(player, bonusItem)) {
+                        score += 30; // Add 30 points
+                        bonusCatchSound.currentTime = 0; // Reset the sound to the beginning
+                        bonusCatchSound.play();  // Play the bonus item catch sound
+                        bonusItem = createBonusItem(); // Respawn the bonus item after collection
+                    }
+                }
+            }
+        }
+
         function drawBullets() {
             bullets.forEach((bullet, index) => {
                 ctx.fillStyle = 'white';
@@ -238,9 +288,8 @@
 
         // Function to play the projectile hit sound (clone for fast repeat)
         function playProjectileHitSound() {
-            let sound = new Audio(projectileHitSound); // Clone the hit sound
-            sound.volume = 1.0;  // Set volume to 100%
-            sound.play();  // Play sound for hitting enemy
+            projectileHitSound.currentTime = 0; // Reset the sound to start from the beginning
+            projectileHitSound.play();
         }
 
         // Function to draw the score and lives (as images) on the canvas
@@ -264,12 +313,12 @@
                    bullet.y + 10 > enemy.y;
         }
 
-        // Check if the player is colliding with an enemy
-        function isColliding(player, enemy) {
-            return player.x < enemy.x + enemy.width &&
-                   player.x + player.width > enemy.x &&
-                   player.y < enemy.y + enemy.height &&
-                   player.y + player.height > enemy.y;
+        // Check if the player is colliding with an enemy or bonus item
+        function isColliding(player, object) {
+            return player.x < object.x + object.width &&
+                   player.x + player.width > object.x &&
+                   player.y < object.y + object.height &&
+                   player.y + player.height > object.y;
         }
 
         // Decrease player lives when hit and check for game over
@@ -299,6 +348,7 @@
             restartButton.style.display = 'none';     // Hide restart button
             bullets = [];                             // Clear bullets
             enemies = [];                             // Clear enemies
+            bonusItem = createBonusItem();            // Create a bonus item
 
             for (let i = 0; i < 5; i++) {
                 enemies.push(createEnemy());          // Create new enemies
@@ -323,6 +373,7 @@
             drawPlayer();
             drawEnemies();
             drawBullets();
+            drawBonusItem(); // Draw and handle the bonus item
             drawScoreAndLives(); // Draw the score and lives as images on the game canvas
             animationId = requestAnimationFrame(update); // Store the animation frame ID
         }
