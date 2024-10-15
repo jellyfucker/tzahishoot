@@ -65,44 +65,29 @@
 
         // Initialize game variables and scaling factors
         let canvasWidth, canvasHeight;
-        let playerScale, enemyScale, bulletScale;
-
-        // Define aspect ratio and size limits
-        const aspectRatio = 4 / 3;
-        const minCanvasWidth = 600;
-        const minCanvasHeight = 450;
+        let playerScale = 0.05;  // 5% of canvas width
+        let enemyScale = 0.07;   // 7% of canvas width
+        let bulletScale = 0.01;  // 1% of canvas width
 
         // Responsive canvas sizing function
         function resizeCanvas() {
-            let windowWidth = window.innerWidth;
-            let windowHeight = window.innerHeight;
+            // Set canvas size to match the window size, maintaining a 4:3 aspect ratio
+            let aspectRatio = 4 / 3;
+            canvasWidth = window.innerWidth;
+            canvasHeight = canvasWidth / aspectRatio;
 
-            // Set canvas size to fill the screen while maintaining the 4:3 aspect ratio
-            if (windowWidth / windowHeight > aspectRatio) {
-                canvasHeight = Math.min(windowHeight, windowWidth / aspectRatio);
+            if (canvasHeight > window.innerHeight) {
+                canvasHeight = window.innerHeight;
                 canvasWidth = canvasHeight * aspectRatio;
-            } else {
-                canvasWidth = Math.min(windowWidth, windowHeight * aspectRatio);
-                canvasHeight = canvasWidth / aspectRatio;
             }
-
-            // Ensure a minimum size for the canvas
-            if (canvasWidth < minCanvasWidth) canvasWidth = minCanvasWidth;
-            if (canvasHeight < minCanvasHeight) canvasHeight = minCanvasHeight;
 
             canvas.width = canvasWidth;
             canvas.height = canvasHeight;
 
-            // Recalculate scaling factors based on the new canvas size
-            playerScale = 0.05 * canvas.width;  // Player is 5% of canvas width
-            enemyScale = 0.07 * canvas.width;   // Enemies are 7% of canvas width
-            bulletScale = 0.01 * canvas.width;  // Bullets are 1% of canvas width
-
-            // Update player size and position
-            player.width = playerScale;
-            player.height = playerScale;
-            player.x = canvas.width / 2 - player.width / 2;
-            player.y = canvas.height - player.height * 2;
+            // Recalculate scaling factors
+            playerScale = 0.05 * canvas.width;
+            enemyScale = 0.07 * canvas.width;
+            bulletScale = 0.01 * canvas.width;
         }
 
         // Call the function initially and whenever the window is resized
